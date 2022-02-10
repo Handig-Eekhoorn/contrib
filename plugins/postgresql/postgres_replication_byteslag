@@ -1,0 +1,82 @@
+#!/usr/bin/perl
+# -*- cperl -*-
+#
+# Copyright (C) 2009 Magnus Hagander, Redpill Linpro AB
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; version 2 dated June,
+# 1991.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301 USA.
+
+=head1 NAME
+
+postgres_connections_db - Plugin to monitor PostgreSQL connections per
+database.
+
+=head1 CONFIGURATION
+
+Configuration is done through libpq environment variables, for example
+PGUSER, PGDATABASE, etc. For more information, see L<Munin::Plugin::Pgsql>.
+
+=head1 SEE ALSO
+
+L<Munin::Plugin::Pgsql>
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=head1 AUTHOR
+
+Magnus Hagander <magnus@hagander.net>, Redpill Linpro AB
+Hannes Erven <hannes@handig-eekhoorn.at>, Handig Eekhoorn GmbH
+
+=head1 COPYRIGHT/License.
+
+Copyright (c) 2009 Magnus Hagander, Redpill Linpro AB
+Copyright (c) 2022 Hannes Erven <hannes@handig-eekhoorn.at>, Handig Eekhoorn GmbH
+
+All rights reserved. This program is free software; you can
+redistribute it and/or modify it under the terms of the GNU General
+Public License as published by the Free Software Foundation; version 2
+dated June, 1991.
+
+=cut
+
+use strict;
+use warnings;
+
+use Munin::Plugin::Pgsql;
+
+# SELECT usename, client_addr, pg_size_pretty(abs(pg_wal_lsn_diff(pg_current_wal_insert_lsn() , flush_lsn))) from pg_stat_replication
+
+my $pg = Munin::Plugin::Pgsql->new(
+    title  => 'PostgreSQL Streaming Replication (bytes)',
+    info   => 'Flush lag (bytes) to streaming replication clients',
+    vlabel => 'Bytes',
+    basequery => [
+        "select slot_name, 
+	    CASE
+		WHEN state='streaming' OR replay_lag IS NOT NULL   THEN pg_wal_lsn_diff(pg_current_wal_insert_lsn() , flush_lsn)
+		WHEN state='catchup'                               THEN -100.0
+		ELSE -42.0
+	    END as replay_lag 
+	 from pg_replication_slots s left outer join pg_stat_replication r  ON (s.active_pid=r.pid) WHERE NOT s.slot_name LIKE '%30d'"
+    ],
+    configquery =>
+        "SELECT slot_name, slot_name FROM pg_replication_slots WHERE NOT slot_name LIKE '%30d' ORDER BY 1"
+);
+
+$pg->Process();
+
