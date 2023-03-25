@@ -17,6 +17,7 @@ my $db_port = $ENV{'pgbouncer_port'}  || '6432';
 my $db_host = $ENV{'pgbouncer_host'}  || 'localhost';
 my $db_pass = $ENV{'pgbouncer_pass'}  || '';
 my $db_pool = $ENV{'pgbouncer_pool'}  || '';
+my $db_poolU= $ENV{'pgbouncer_pool_user'}  || '';
 my $db_name = 'pgbouncer';
 my @data = ();
 # get the DB (pool) name we want to fetch
@@ -200,6 +201,8 @@ foreach my $get ('version', 'pools', 'stats')
 	    # print values for the stats: average request, average query time, bytes in/out
 	    if ($get eq 'stats')
 	    {
+
+
 print "# >>> $get @data\n";
 	
 		print "multigraph ".$plugin_name."_".$get."_avg_req\n";
@@ -213,20 +216,44 @@ print "# >>> $get @data\n";
 		print $pool_name."_avg_sent.value ".$data[11]."\n";
 	    }
 	    # print data for the pools: server, client
-	    if ($get eq 'pools' and $data[1] ne 'pgbouncer_auth')
-	    {
+	    if ($get eq 'pools') {
+		if ( $data[1] eq 'pgbouncer_auth'
+		    or ($db_poolU ne '' and $db_poolU ne $data[1])
+		){
+		    print "# SKIP($db_poolU) $get >>> @data\n";
+		    next ;
+		}
+		#  0	database
+		#  1	user
+		my $cl_active		= 1*$data[2];
+		my $cl_waiting		= 1*$data[3];
+		#  4	cl_active_cancel_req
+		#  5	cl_waiting_cancel_req
+		my $sv_active		= 1*$data[6];
+		#  7	sv_active_cancel
+		#  8	sv_being_canceled
+		my $sv_idle		= 1*$data[9];
+		my $sv_used		= 1*$data[10];
+		my $sv_tested		= 1*$data[11];
+		my $sv_login		= 1*$data[12];
+
+		my $maxwaitS		= 1*$data[13];
+		my $maxwaitU		= 1*$data[14];
+		my $maxwait = $maxwaitS+$maxwaitU/1000000;
+		# 15	pool_mode
+
 print "# >>> $get @data\n";
 		print "multigraph ".$plugin_name."_".$get."_server\n";
-		print $pool_name."_server_active.value ".$data[5]."\n";
-		print $pool_name."_server_idle.value ".$data[6]."\n";
-		print $pool_name."_server_used.value ".$data[7]."\n";
-		print $pool_name."_server_tested.value ".$data[8]."\n";
-		print $pool_name."_server_login.value ".$data[9]."\n";
+		print $pool_name."_server_active.value ".$sv_active."\n";
+		print $pool_name."_server_idle.value ".$sv_idle."\n";
+		print $pool_name."_server_used.value ".$sv_used."\n";
+		print $pool_name."_server_tested.value ".$sv_tested."\n";
+		print $pool_name."_server_login.value ".$sv_login."\n";
 		print "multigraph ".$plugin_name."_".$get."_client\n";
-		print $pool_name."_client_active.value ".$data[2]."\n";
-		print $pool_name."_client_waiting.value ".$data[3]."\n";
+		print $pool_name."_client_active.value ".$cl_active."\n";
+		print $pool_name."_client_waiting.value ".$cl_waiting."\n";
 		print "multigraph ".$plugin_name."_".$get."_maxwait\n";
-		print $pool_name."_maxwait.value ".($data[10]*1+$data[11]*1/1000000)."\n";
+		print $pool_name."_maxwait.value ".$maxwait."\n";
 	    }
 	} else {
 	    print "# SKIP $get >>> @data\n";
