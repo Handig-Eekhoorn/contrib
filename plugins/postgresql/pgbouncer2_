@@ -201,19 +201,45 @@ foreach my $get ('version', 'pools', 'stats')
 	    # print values for the stats: average request, average query time, bytes in/out
 	    if ($get eq 'stats')
 	    {
-
+		# STATS
+		#
+		#  0 database
+		#  1 total_xact_count
+		#  2 total_query_count
+		#  3 total_server_assignment_count
+		#  4 total_received
+		#  5 total_sent
+		#  6 total_xact_time
+		#  7 total_query_time
+		#  8 total_wait_time
+		#  9 total_client_parse-count
+		# 10 total_server_parse_count
+		# 11 total_bind_count
+		# 12 avg_xact_count
+		# 13 avg_query_count
+		# 14 avg_server_assignment_count
+		# 15 avg_recv
+		# 16 avg_sent
+		# 17 avg_xact_time
+		# 18 avg_query_time
+		# 19 avg_wait_time
+		# 20 avg_client_parse_count
+		# 21 avg_server_parse_count
+		# 22 avg_bind_count
+		
+		
 
 print "# >>> $get @data\n";
 	
 		print "multigraph ".$plugin_name."_".$get."_avg_req\n";
-		print $pool_name."_avg_req.value ".$data[9]."\n";
+		print $pool_name."_avg_req.value ".$data[13]."\n";
 		print "multigraph ".$plugin_name."_".$get."_avg_query\n";
-		print $pool_name."_avg_query.value ".$data[13]."\n";
+		print $pool_name."_avg_query.value ".$data[18]."\n";
 		print "multigraph ".$plugin_name."_".$get."_avg_wait\n";
-		print $pool_name."_avg_wait.value ".$data[14]."\n";
+		print $pool_name."_avg_wait.value ".$data[19]."\n";
 		print "multigraph ".$plugin_name."_".$get."_bytesinout\n";
-		print $pool_name."_avg_recv.value ".$data[10]."\n";
-		print $pool_name."_avg_sent.value ".$data[11]."\n";
+		print $pool_name."_avg_recv.value ".$data[15]."\n";
+		print $pool_name."_avg_sent.value ".$data[16]."\n";
 	    }
 	    # print data for the pools: server, client
 	    if ($get eq 'pools') {
@@ -241,6 +267,7 @@ print "# >>> $get @data\n";
 		my $maxwaitU		= 1*$data[14];
 		my $maxwait = $maxwaitS+$maxwaitU/1000000;
 		# 15	pool_mode
+		# load_balance_hosts
 
 print "# >>> $get @data\n";
 		print "multigraph ".$plugin_name."_".$get."_server\n";
@@ -367,6 +394,7 @@ See further info on stats and pools on the pgbouncer homepage:
 =head1 AUTHOR
 
 Clemens Schwaighofer <gullevek@gullevek.org>
+Hannes Erven <hannes@handig-eekhoorn.at> (Updates)
 
 =head1 LICENSE
 
